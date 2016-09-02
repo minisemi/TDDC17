@@ -8,6 +8,8 @@ import aima.core.agent.Percept;
 import aima.core.agent.impl.*;
 
 import java.util.Random;
+import java.util.Stack;
+
 
 class MyAgentState
 {
@@ -48,7 +50,7 @@ class MyAgentState
 		Boolean bump = (Boolean)p.getAttribute("bump");
 
 		if (agent_last_action==ACTION_MOVE_FORWARD && !bump)
-	    {
+	    {		
 			switch (agent_direction) {
 			case MyAgentState.NORTH:
 				agent_y_position--;
@@ -64,7 +66,6 @@ class MyAgentState
 				break;
 			}
 	    }
-		
 	}
 	
 	public void updateWorld(int x_position, int y_position, int info)
@@ -100,8 +101,10 @@ class MyAgentProgram implements AgentProgram {
 	private Random random_generator = new Random();
 	
 	// Here you can define your variables!
-	public int iterationCounter = 10;
+	public int iterationCounter = 500;
 	public MyAgentState state = new MyAgentState();
+	public int s1, s2, s3 ,s4;
+	public Stack<int[][]> unknown = new Stack<int[][]>();
 	
 	// moves the Agent to a random start position
 	// uses percepts to update the Agent position - only the position, other percepts are ignored
@@ -148,6 +151,13 @@ class MyAgentProgram implements AgentProgram {
     	System.out.println("y=" + state.agent_y_position);
     	System.out.println("dir=" + state.agent_direction);
     	
+    	
+    	s1 = state.world[state.agent_x_position][state.agent_y_position-1];
+    	s2 = state.world[state.agent_x_position+1][state.agent_y_position];
+    	s3 = state.world[state.agent_x_position][state.agent_y_position+1];
+    	s4 = state.world[state.agent_x_position-1][state.agent_y_position];
+    	
+    	
 		
 	    iterationCounter--;
 	    
@@ -180,8 +190,11 @@ class MyAgentProgram implements AgentProgram {
 	    }
 	    if (dirt)
 	    	state.updateWorld(state.agent_x_position,state.agent_y_position,state.DIRT);
-	    else
+	    else{
+	    	
+	    	if(state.world[state.agent_x_position][state.agent_y_position] != 4)
 	    	state.updateWorld(state.agent_x_position,state.agent_y_position,state.CLEAR);
+	    }
 	    
 	    state.printWorldDebug();
 	    
@@ -197,17 +210,63 @@ class MyAgentProgram implements AgentProgram {
 	    {
 	    	if (bump)
 	    	{
-	    		state.agent_last_action=state.ACTION_NONE;
-		    	return NoOpAction.NO_OP;
+	    		 state.agent_direction = ((state.agent_direction-1) % 4);
+	 		    if (state.agent_direction<0) 
+	 		    	state.agent_direction +=4;
+	    		state.agent_last_action=state.ACTION_TURN_LEFT;
+	    		return LIUVacuumEnvironment.ACTION_TURN_LEFT;
 	    	}
 	    	else
 	    	{
-	    		state.agent_last_action=state.ACTION_MOVE_FORWARD;
-	    		return LIUVacuumEnvironment.ACTION_MOVE_FORWARD;
+	    		switch(state.agent_direction){
+	    		
+	    		case MyAgentState.NORTH:
+					if(s1 == 0){
+						state.agent_last_action=state.ACTION_MOVE_FORWARD;
+			    		return LIUVacuumEnvironment.ACTION_MOVE_FORWARD;
+					}
+					break;
+				case MyAgentState.EAST:
+					if(s2 == 0){
+						state.agent_last_action=state.ACTION_MOVE_FORWARD;
+			    		return LIUVacuumEnvironment.ACTION_MOVE_FORWARD;
+					}
+					
+					break;
+				case MyAgentState.SOUTH:
+					if(s3 == 0){
+						state.agent_last_action=state.ACTION_MOVE_FORWARD;
+			    		return LIUVacuumEnvironment.ACTION_MOVE_FORWARD;
+					}
+					break;
+				case MyAgentState.WEST:
+					if(s4 == 0){
+						state.agent_last_action=state.ACTION_MOVE_FORWARD;
+			    		return LIUVacuumEnvironment.ACTION_MOVE_FORWARD;
+					}
+					break;
+	    		
+	    		}
+	    		
+	    		if(s1 != 0 && s2 != 0 && s3 != 0 && s4 != 0){
+	    			state.agent_last_action=state.ACTION_MOVE_FORWARD;
+		    		return LIUVacuumEnvironment.ACTION_MOVE_FORWARD;
+	    		}
+	    		
+	    		  state.agent_direction = ((state.agent_direction-1) % 4);
+	    		  if (state.agent_direction<0) 
+		 		    	state.agent_direction +=4;
+		    		state.agent_last_action=state.ACTION_TURN_LEFT;
+		    		return LIUVacuumEnvironment.ACTION_TURN_LEFT;
+	    		}
 	    	}
+	    	
 	    }
 	}
-}
+
+
+
+
 
 public class MyVacuumAgent extends AbstractAgent {
     public MyVacuumAgent() {

@@ -106,7 +106,7 @@ class MyAgentProgram implements AgentProgram {
 	// Here you can define your variables!
 	public int iterationCounter = 500;
 	public MyAgentState state = new MyAgentState();
-	public int s1, s2, s3 ,s4, EAST_WALL = 0, SOUTH_WALL = 0, counter = 0, size = 0;
+	public int s1, s2, s3 ,s4, EAST_WALL = 0, SOUTH_WALL = 0, counter = 0, size = 100, numberOfBumbs = 0;
 	public Stack<int[][]> unknown = new Stack<int[][]>();
 	Random random = new Random();
 	
@@ -169,10 +169,10 @@ class MyAgentProgram implements AgentProgram {
 	    iterationCounter--;
 	    
 	    
-	    if(EAST_WALL != 0 && size == 0){
+	    if(EAST_WALL != 0 && size == 100){
 	    	size = (EAST_WALL-1)*(EAST_WALL-1) -1;
 	    }
-	    if(SOUTH_WALL != 0 && size == 0){
+	    if(SOUTH_WALL != 0 && size == 100){
 	    	size = (SOUTH_WALL-1)*(SOUTH_WALL-1) -1;
 	    }
 	    
@@ -193,6 +193,8 @@ class MyAgentProgram implements AgentProgram {
 	    // State update based on the percept value and the last action
 	    state.updatePosition((DynamicPercept)percept);
 	    if (bump) {
+	    	numberOfBumbs++;
+	    	
 			switch (state.agent_direction) {
 			case MyAgentState.NORTH:
 				state.updateWorld(state.agent_x_position,state.agent_y_position-1,state.WALL);
@@ -214,7 +216,7 @@ class MyAgentProgram implements AgentProgram {
 	    	state.updateWorld(state.agent_x_position,state.agent_y_position,state.DIRT);
 	    else{
 	    	
-	    	if(state.world[state.agent_x_position][state.agent_y_position] != 4 && state.world[state.agent_x_position][state.agent_y_position] != 2){
+	    	if(state.world[state.agent_x_position][state.agent_y_position] != state.HOME && state.world[state.agent_x_position][state.agent_y_position] != state.CLEAR){
 	    	state.updateWorld(state.agent_x_position,state.agent_y_position,state.CLEAR);
 	    	counter++;
 	    	
@@ -242,7 +244,7 @@ class MyAgentProgram implements AgentProgram {
 	    	else
 	    	{
 	    		int action = random.nextInt(10);
-				if(action<8){
+				if(action<8 || counter >= size || numberOfBumbs <= 5){
 					state.agent_last_action=state.ACTION_MOVE_FORWARD;
 					return LIUVacuumEnvironment.ACTION_MOVE_FORWARD;
 				}

@@ -10,6 +10,8 @@ import aima.core.agent.impl.*;
 import java.util.Random;
 import java.util.Stack;
 
+import com.sun.org.apache.bcel.internal.generic.NEW;
+
 
 class MyAgentState
 {
@@ -48,6 +50,7 @@ class MyAgentState
 	public void updatePosition(DynamicPercept p)
 	{
 		Boolean bump = (Boolean)p.getAttribute("bump");
+		
 
 		if (agent_last_action==ACTION_MOVE_FORWARD && !bump)
 	    {		
@@ -103,8 +106,9 @@ class MyAgentProgram implements AgentProgram {
 	// Here you can define your variables!
 	public int iterationCounter = 500;
 	public MyAgentState state = new MyAgentState();
-	public int s1, s2, s3 ,s4;
+	public int s1, s2, s3 ,s4, EAST_WALL = 0, SOUTH_WALL = 0, counter = 0, size = 0;
 	public Stack<int[][]> unknown = new Stack<int[][]>();
+	Random random = new Random();
 	
 	// moves the Agent to a random start position
 	// uses percepts to update the Agent position - only the position, other percepts are ignored
@@ -158,8 +162,20 @@ class MyAgentProgram implements AgentProgram {
     	s4 = state.world[state.agent_x_position-1][state.agent_y_position];
     	
     	
+    	System.out.println(size + "  "+ counter);
+    	
+    	
 		
 	    iterationCounter--;
+	    
+	    
+	    if(EAST_WALL != 0 && size == 0){
+	    	size = (EAST_WALL-1)*(EAST_WALL-1) -1;
+	    }
+	    if(SOUTH_WALL != 0 && size == 0){
+	    	size = (SOUTH_WALL-1)*(SOUTH_WALL-1) -1;
+	    }
+	    
 	    
 	    if (iterationCounter==0)
 	    	return NoOpAction.NO_OP;
@@ -170,6 +186,10 @@ class MyAgentProgram implements AgentProgram {
 	    Boolean home = (Boolean)p.getAttribute("home");
 	    System.out.println("percept: " + p);
 	    
+	    if(counter >= size && home ){
+	    	return NoOpAction.NO_OP;
+	    }
+	    
 	    // State update based on the percept value and the last action
 	    state.updatePosition((DynamicPercept)percept);
 	    if (bump) {
@@ -179,9 +199,11 @@ class MyAgentProgram implements AgentProgram {
 				break;
 			case MyAgentState.EAST:
 				state.updateWorld(state.agent_x_position+1,state.agent_y_position,state.WALL);
+				EAST_WALL = state.agent_x_position+1;
 				break;
 			case MyAgentState.SOUTH:
 				state.updateWorld(state.agent_x_position,state.agent_y_position+1,state.WALL);
+				SOUTH_WALL = state.agent_y_position+1;
 				break;
 			case MyAgentState.WEST:
 				state.updateWorld(state.agent_x_position-1,state.agent_y_position,state.WALL);
@@ -192,8 +214,11 @@ class MyAgentProgram implements AgentProgram {
 	    	state.updateWorld(state.agent_x_position,state.agent_y_position,state.DIRT);
 	    else{
 	    	
-	    	if(state.world[state.agent_x_position][state.agent_y_position] != 4)
+	    	if(state.world[state.agent_x_position][state.agent_y_position] != 4 && state.world[state.agent_x_position][state.agent_y_position] != 2){
 	    	state.updateWorld(state.agent_x_position,state.agent_y_position,state.CLEAR);
+	    	counter++;
+	    	
+	    }
 	    }
 	    
 	    state.printWorldDebug();
@@ -210,54 +235,22 @@ class MyAgentProgram implements AgentProgram {
 	    {
 	    	if (bump)
 	    	{
-	    		 state.agent_direction = ((state.agent_direction-1) % 4);
-	 		    if (state.agent_direction<0) 
-	 		    	state.agent_direction +=4;
-	    		state.agent_last_action=state.ACTION_TURN_LEFT;
-	    		return LIUVacuumEnvironment.ACTION_TURN_LEFT;
+	    		state.agent_direction = ((state.agent_direction+1) % 4);
+			    state.agent_last_action = state.ACTION_TURN_RIGHT;
+			    return LIUVacuumEnvironment.ACTION_TURN_RIGHT;
 	    	}
 	    	else
 	    	{
-	    		switch(state.agent_direction){
-	    		
-	    		case MyAgentState.NORTH:
-					if(s1 == 0){
-						state.agent_last_action=state.ACTION_MOVE_FORWARD;
-			    		return LIUVacuumEnvironment.ACTION_MOVE_FORWARD;
-					}
-					break;
-				case MyAgentState.EAST:
-					if(s2 == 0){
-						state.agent_last_action=state.ACTION_MOVE_FORWARD;
-			    		return LIUVacuumEnvironment.ACTION_MOVE_FORWARD;
-					}
-					
-					break;
-				case MyAgentState.SOUTH:
-					if(s3 == 0){
-						state.agent_last_action=state.ACTION_MOVE_FORWARD;
-			    		return LIUVacuumEnvironment.ACTION_MOVE_FORWARD;
-					}
-					break;
-				case MyAgentState.WEST:
-					if(s4 == 0){
-						state.agent_last_action=state.ACTION_MOVE_FORWARD;
-			    		return LIUVacuumEnvironment.ACTION_MOVE_FORWARD;
-					}
-					break;
-	    		
-	    		}
-	    		
-	    		if(s1 != 0 && s2 != 0 && s3 != 0 && s4 != 0){
-	    			state.agent_last_action=state.ACTION_MOVE_FORWARD;
-		    		return LIUVacuumEnvironment.ACTION_MOVE_FORWARD;
-	    		}
-	    		
-	    		  state.agent_direction = ((state.agent_direction-1) % 4);
-	    		  if (state.agent_direction<0) 
-		 		    	state.agent_direction +=4;
-		    		state.agent_last_action=state.ACTION_TURN_LEFT;
-		    		return LIUVacuumEnvironment.ACTION_TURN_LEFT;
+	    		int action = random.nextInt(10);
+				if(action<8){
+					state.agent_last_action=state.ACTION_MOVE_FORWARD;
+					return LIUVacuumEnvironment.ACTION_MOVE_FORWARD;
+				}
+				else{
+					state.agent_direction = ((state.agent_direction+1) % 4);
+				    state.agent_last_action = state.ACTION_TURN_RIGHT;
+				    return LIUVacuumEnvironment.ACTION_TURN_RIGHT;
+				}
 	    		}
 	    	}
 	    	

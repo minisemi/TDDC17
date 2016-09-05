@@ -98,6 +98,10 @@ class MyAgentState
 	}
 }
 
+
+
+
+
 class MyAgentProgram implements AgentProgram {
 
 	private int initnialRandomActions = 10;

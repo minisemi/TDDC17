@@ -15,6 +15,16 @@ import com.sun.org.apache.bcel.internal.classfile.Unknown;
 import com.sun.org.apache.bcel.internal.generic.NEW;
 import com.sun.org.apache.xerces.internal.impl.xpath.XPath;
 
+import static tddc17.MyAgentState.NORTH;
+import static tddc17.MyAgentState.WEST;
+import static tddc17.MyAgentState.EAST;
+import static tddc17.MyAgentState.SOUTH;
+import static tddc17.MyAgentState.ACTION_TURN_LEFT;
+import static tddc17.MyAgentState.ACTION_SUCK;
+import static tddc17.MyAgentState.ACTION_NONE;
+import static tddc17.MyAgentState.ACTION_MOVE_FORWARD;
+import static tddc17.MyAgentState.ACTION_TURN_RIGHT;
+
 class MyAgentState {
 	public int[][] world = new int[30][30];
 	public int initialized = 0;
@@ -23,15 +33,16 @@ class MyAgentState {
 	final int CLEAR = 2;
 	final int DIRT = 3;
 	final int HOME = 4;
-	final int ACTION_NONE = 0;
-	final int ACTION_MOVE_FORWARD = 1;
-	final int ACTION_TURN_RIGHT = 2;
-	final int ACTION_TURN_LEFT = 3;
-	final int ACTION_SUCK = 4;
+	public static final int ACTION_NONE = 0;
+	public static final int ACTION_MOVE_FORWARD = 1;
+	public static final int ACTION_TURN_RIGHT = 2;
+	public static final int ACTION_TURN_LEFT = 3;
+	public static final int ACTION_SUCK = 4;
 
 	public int agent_x_position = 1;
 	public int agent_y_position = 1;
 	public int agent_last_action = ACTION_NONE;
+	public int agent_last_last_action = ACTION_NONE;
 
 	public static final int NORTH = 0;
 	public static final int EAST = 1;
@@ -108,7 +119,7 @@ class MyAgentProgram implements AgentProgram {
 	public Stack<Integer> xPath = new Stack<Integer>();
 	public Stack<Integer> yPath = new Stack<Integer>();
 	
-	boolean testCheck = true;
+	boolean testCheck = true, doneVerticalZigZag=false, doneHorizontalZigZag=false, startEast = false;
 
 	Random random = new Random();
 
@@ -156,15 +167,13 @@ class MyAgentProgram implements AgentProgram {
 		// only moving forward.
 		// START HERE - code below should be modified!
 
+
+
 		s1 = state.world[state.agent_x_position][state.agent_y_position - 1];
 		s2 = state.world[state.agent_x_position + 1][state.agent_y_position];
 		s3 = state.world[state.agent_x_position][state.agent_y_position + 1];
 		s4 = state.world[state.agent_x_position - 1][state.agent_y_position];
-		
-		
-		
-		
-		
+
 		if(testCheck){
 			xPath.push(1);
 			yPath.push(1);
@@ -179,8 +188,6 @@ class MyAgentProgram implements AgentProgram {
 			testCheck = false;
 			
 		}
-		
-		
 
 		System.out.println(size + "  " + counter);
 
@@ -206,6 +213,8 @@ class MyAgentProgram implements AgentProgram {
 			return NoOpAction.NO_OP;
 		}
 
+
+
 		// State update based on the percept value and the last action
 		state.updatePosition((DynamicPercept) percept);
 
@@ -213,11 +222,198 @@ class MyAgentProgram implements AgentProgram {
 		System.out.println("y=" + state.agent_y_position);
 		System.out.println("dir=" + state.agent_direction);
 
+		// Start of zig zag down
+
+		if (!doneVerticalZigZag) {
+
+			switch (state.agent_direction) {
+
+				case NORTH:
+					updateLastAction(ACTION_TURN_RIGHT);
+					state.agent_direction = EAST;
+					return LIUVacuumEnvironment.ACTION_TURN_RIGHT;
+				case EAST:
+					if (bump) {
+						if (state.agent_y_position==15){
+							doneVerticalZigZag = true;
+							updateLastAction(ACTION_TURN_LEFT);
+							state.agent_direction = NORTH;
+							if (state.agent_x_position >= 8){
+								startEast = true;
+							}
+							return LIUVacuumEnvironment.ACTION_TURN_LEFT;
+						}
+						updateLastAction(ACTION_TURN_RIGHT);
+						state.agent_direction = SOUTH;
+						return LIUVacuumEnvironment.ACTION_TURN_RIGHT;
+					}
+					updateLastAction(ACTION_MOVE_FORWARD);
+					return LIUVacuumEnvironment.ACTION_MOVE_FORWARD;
+				case WEST:
+					if (bump) {
+						if (state.agent_y_position==15){
+							doneVerticalZigZag = true;
+							updateLastAction(ACTION_TURN_RIGHT);
+							state.agent_direction = NORTH;
+							if (state.agent_x_position >= 8){
+								startEast = true;
+							}
+							return LIUVacuumEnvironment.ACTION_TURN_RIGHT;
+						}
+						updateLastAction(ACTION_TURN_LEFT);
+						state.agent_direction = SOUTH;
+						return LIUVacuumEnvironment.ACTION_TURN_LEFT;
+					}
+					updateLastAction(ACTION_MOVE_FORWARD);
+					return LIUVacuumEnvironment.ACTION_MOVE_FORWARD;
+				case SOUTH:
+					if (state.agent_last_action == ACTION_TURN_RIGHT || state.agent_last_action == ACTION_TURN_LEFT) {
+						updateLastAction(ACTION_MOVE_FORWARD);
+						return LIUVacuumEnvironment.ACTION_MOVE_FORWARD;
+					}
+
+					if (state.agent_last_last_action == ACTION_TURN_LEFT) {
+						updateLastAction(ACTION_TURN_LEFT);
+						state.agent_direction = EAST;
+						return LIUVacuumEnvironment.ACTION_TURN_LEFT;
+					}
+
+					if (state.agent_last_last_action == ACTION_TURN_RIGHT) {
+						updateLastAction(ACTION_TURN_RIGHT);
+						state.agent_direction = WEST;
+						return LIUVacuumEnvironment.ACTION_TURN_RIGHT;
+					}
+
+			}
+		}
+		// end of Zig zag down
+
+		// start of zig zag to sides, start east
+
+		if (!doneHorizontalZigZag && startEast){
+
+			switch (state.agent_direction) {
+
+				case NORTH:
+					if (bump) {
+						if (state.agent_x_position==1){
+							doneHorizontalZigZag = true;
+							break;
+						}
+						updateLastAction(ACTION_TURN_LEFT);
+						state.agent_direction = WEST;
+						return LIUVacuumEnvironment.ACTION_TURN_LEFT;
+					}
+					updateLastAction(ACTION_MOVE_FORWARD);
+					return LIUVacuumEnvironment.ACTION_MOVE_FORWARD;
+
+				case EAST:
+
+
+				case WEST:
+					if (state.agent_last_action == ACTION_TURN_RIGHT || state.agent_last_action == ACTION_TURN_LEFT) {
+						updateLastAction(ACTION_MOVE_FORWARD);
+						return LIUVacuumEnvironment.ACTION_MOVE_FORWARD;
+					}
+
+					if (state.agent_last_last_action == ACTION_TURN_LEFT) {
+						updateLastAction(ACTION_TURN_LEFT);
+						state.agent_direction = SOUTH;
+						return LIUVacuumEnvironment.ACTION_TURN_LEFT;
+					}
+
+					if (state.agent_last_last_action == ACTION_TURN_RIGHT) {
+						updateLastAction(ACTION_TURN_RIGHT);
+						state.agent_direction = NORTH;
+						return LIUVacuumEnvironment.ACTION_TURN_RIGHT;
+					}
+
+				case SOUTH:
+					if (bump) {
+						if (state.agent_x_position==1){
+							doneHorizontalZigZag = true;
+							break;
+						}
+						updateLastAction(ACTION_TURN_RIGHT);
+						state.agent_direction = WEST;
+						return LIUVacuumEnvironment.ACTION_TURN_RIGHT;
+					}
+					updateLastAction(ACTION_MOVE_FORWARD);
+					return LIUVacuumEnvironment.ACTION_MOVE_FORWARD;
+
+			}
+
+		}
+
+		//end of zig zag to sides, start east
+
+		// start of zig zag to sides, start west
+
+		if (!doneHorizontalZigZag && !startEast){
+
+			switch (state.agent_direction) {
+
+				case NORTH:
+					if (bump) {
+						if (state.agent_x_position==15){
+							doneHorizontalZigZag = true;
+							break;
+						}
+						updateLastAction(ACTION_TURN_RIGHT);
+						state.agent_direction = EAST;
+						return LIUVacuumEnvironment.ACTION_TURN_RIGHT;
+					}
+					updateLastAction(ACTION_MOVE_FORWARD);
+					return LIUVacuumEnvironment.ACTION_MOVE_FORWARD;
+
+				case EAST:
+					if (state.agent_last_action == ACTION_TURN_RIGHT || state.agent_last_action == ACTION_TURN_LEFT) {
+						updateLastAction(ACTION_MOVE_FORWARD);
+						return LIUVacuumEnvironment.ACTION_MOVE_FORWARD;
+					}
+
+					if (state.agent_last_last_action == ACTION_TURN_LEFT) {
+						updateLastAction(ACTION_TURN_LEFT);
+						state.agent_direction = NORTH;
+						return LIUVacuumEnvironment.ACTION_TURN_LEFT;
+					}
+
+					if (state.agent_last_last_action == ACTION_TURN_RIGHT) {
+						updateLastAction(ACTION_TURN_RIGHT);
+						state.agent_direction = SOUTH;
+						return LIUVacuumEnvironment.ACTION_TURN_RIGHT;
+					}
+
+
+				case WEST:
+
+
+				case SOUTH:
+					if (bump) {
+						if (state.agent_x_position==15){
+							doneHorizontalZigZag = true;
+							break;
+						}
+						updateLastAction(ACTION_TURN_LEFT);
+						state.agent_direction = EAST;
+						return LIUVacuumEnvironment.ACTION_TURN_LEFT;
+					}
+					updateLastAction(ACTION_MOVE_FORWARD);
+					return LIUVacuumEnvironment.ACTION_MOVE_FORWARD;
+
+			}
+
+		}
+		return LIUVacuumEnvironment.ACTION_MOVE_FORWARD;
+
+		// end ig zag to sides start west
+
+/*
 		if (bump) {
 			numberOfBumbs++;
 
 			switch (state.agent_direction) {
-			case MyAgentState.NORTH:
+			case NORTH:
 				state.updateWorld(state.agent_x_position, state.agent_y_position - 1, state.WALL);
 				break;
 			case MyAgentState.EAST:
@@ -275,7 +471,7 @@ class MyAgentProgram implements AgentProgram {
 				} else{
 
 				switch (pathDirection) {
-				case MyAgentState.NORTH:
+				case NORTH:
 					if(state.agent_direction == MyAgentState.SOUTH || state.agent_direction == MyAgentState.WEST){
 						state.agent_direction = ((state.agent_direction + 1) % 4);
 						state.agent_last_action = state.ACTION_TURN_RIGHT;
@@ -289,7 +485,7 @@ class MyAgentProgram implements AgentProgram {
 						return LIUVacuumEnvironment.ACTION_TURN_LEFT;
 					}
 				case MyAgentState.EAST:
-					if(state.agent_direction == MyAgentState.NORTH || state.agent_direction == MyAgentState.WEST){
+					if(state.agent_direction == NORTH || state.agent_direction == MyAgentState.WEST){
 						state.agent_direction = ((state.agent_direction + 1) % 4);
 						state.agent_last_action = state.ACTION_TURN_RIGHT;
 						return LIUVacuumEnvironment.ACTION_TURN_RIGHT;
@@ -302,7 +498,7 @@ class MyAgentProgram implements AgentProgram {
 						return LIUVacuumEnvironment.ACTION_TURN_LEFT;
 					}
 				case MyAgentState.SOUTH:
-					if(state.agent_direction == MyAgentState.NORTH || state.agent_direction == MyAgentState.EAST){
+					if(state.agent_direction == NORTH || state.agent_direction == MyAgentState.EAST){
 						state.agent_direction = ((state.agent_direction + 1) % 4);
 						state.agent_last_action = state.ACTION_TURN_RIGHT;
 						return LIUVacuumEnvironment.ACTION_TURN_RIGHT;
@@ -343,7 +539,7 @@ class MyAgentProgram implements AgentProgram {
 					state.agent_last_action = state.ACTION_TURN_RIGHT;
 					return LIUVacuumEnvironment.ACTION_TURN_RIGHT;
 				}
-	*/		}
+	*/	}/*
 		}
 
 	}
@@ -356,11 +552,16 @@ class MyAgentProgram implements AgentProgram {
 		if (x > state.agent_x_position)
 			return MyAgentState.EAST;
 		if (y < state.agent_y_position)
-			return MyAgentState.NORTH;
+			return NORTH;
 		if (y > state.agent_y_position)
 			return MyAgentState.SOUTH;
 
 		return direction;
+	}*/
+
+	public void updateLastAction (int lastAction){
+		state.agent_last_last_action=state.agent_last_action;
+		state.agent_last_action = lastAction;
 	}
 
 }

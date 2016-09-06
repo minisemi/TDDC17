@@ -2,6 +2,15 @@
 <qualifiedTypeNameHistroy>
 <fullyQualifiedTypeName name="java.lang.String"/>
 <fullyQualifiedTypeName name="aima.core.agent.impl.NoOpAction"/>
-<fullyQualifiedTypeName name="com.sun.org.apache.bcel.internal.generic.NEW"/>
 <fullyQualifiedTypeName name="java.util.Random"/>
+<fullyQualifiedTypeName name="com.sun.org.apache.bcel.internal.classfile.Unknown"/>
+<fullyQualifiedTypeName name="com.sun.xml.internal.fastinfoset.algorithm.IEEE754FloatingPointEncodingAlgorithm"/>
+<fullyQualifiedTypeName name="java.nio.file.Path"/>
+<fullyQualifiedTypeName name="sun.security.acl.WorldGroupImpl"/>
+<fullyQualifiedTypeName name="tddc17.MyAgentState"/>
+<fullyQualifiedTypeName name="aima.core.environment.liuvacuum.LIUVacuumEnvironment"/>
+<fullyQualifiedTypeName name="java.util.Stack"/>
+<fullyQualifiedTypeName name="com.sun.org.apache.bcel.internal.generic.NEW"/>
+<fullyQualifiedTypeName name="com.sun.org.apache.xerces.internal.impl.xpath.XPath"/>
+<fullyQualifiedTypeName name="tddc17.AStarSearch"/>
 </qualifiedTypeNameHistroy>
